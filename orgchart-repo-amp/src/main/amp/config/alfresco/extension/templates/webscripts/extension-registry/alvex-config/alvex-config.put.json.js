@@ -1,4 +1,4 @@
-<import resource="classpath:alfresco/extension/templates/webscripts/alvex-config/alvex-config.lib.js">
+<import resource="classpath:alfresco/extension/templates/webscripts/extension-registry/alvex-config/alvex-config.lib.js">
 
 (function (){
 	model.message = null;
