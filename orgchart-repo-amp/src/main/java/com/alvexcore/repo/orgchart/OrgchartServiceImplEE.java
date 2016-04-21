@@ -46,7 +46,7 @@ public class OrgchartServiceImplEE extends OrgchartServiceImplCE {
 	/**
 	 * Creates new orgchart unit based on existing group
 	 * @param parent Parent orgchart unit
-	 * @param groupName Name of the group to base unit on
+	 * @param groupShortName Name of the group to base unit on
 	 * @return New unit
 	 */
 	@Override
