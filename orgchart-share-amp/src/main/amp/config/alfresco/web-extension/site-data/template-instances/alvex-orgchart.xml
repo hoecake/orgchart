@@ -1,5 +1,5 @@
 <template-instance>
-	<template-type>alvex/orgchart/orgchart-view</template-type>
+	<template-type>orgchart-view</template-type>
 
 	<components>
 		<component>

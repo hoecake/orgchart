@@ -171,7 +171,7 @@ if (typeof Alvex == "undefined" || !Alvex)
                         // And show them in HTML
                         for (m in this.options.assignees) {
                             Dom.get(this.id + "-cntrl-currentValueDisplay").innerHTML
-                                += '<div><img src="/share/res/components/images/filetypes/generic-user-16.png" '
+                                += '<div><img src="/share/res/components/images/filetypes/generic-group-16.png" '
                                 + 'width="16" alt="" title="' + this.options.assignees[m].name + '"> '
                                 + '<a href="/share/page/user/' + this.options.assignees[m].userName + '/profile">'
                                 + this.options.assignees[m].name + '</a> </div>';
@@ -266,7 +266,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             - this.options.assignees_removed.length > 0) )	) );
         },
 
-        getRemoveButtonHTML: function OrgchartViewerDialog_getRemoveButtonHTML(person)
+        getRemoveButtonHTML: function OrgchartGroupViewerDialog_getRemoveButtonHTML(person)
         {
             return '<span class="remove-item" id="' + person.nodeRef
                 + '"><img src="/share/res/components/images/remove-icon-16.png" width="16"/></span>';
@@ -282,7 +282,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             Dom.get(fieldId).innerHTML = '';
             for (m in merged) {
                 Dom.get(fieldId).innerHTML
-                    += '<div><img src="/share/res/components/images/filetypes/generic-user-16.png" '
+                    += '<div><img src="/share/res/components/images/filetypes/generic-group-16.png" '
                     + 'width="16" alt="" title="' + merged[m].name + '"> ' + merged[m].name + ' '
                     + this.getRemoveButtonHTML(merged[m]) + '</div>';
                 YAHOO.util.Event.onAvailable(merged[m].nodeRef, this.attachRemoveClickListener, merged[m], this);
@@ -294,7 +294,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             );
         },
 
-        attachRemoveClickListener: function OrgchartViewerDialog_attachRemoveClickListener(person)
+        attachRemoveClickListener: function OrgchartGroupViewerDialog_attachRemoveClickListener(person)
         {
             YAHOO.util.Event.on(person.nodeRef, 'click', this.removePerson, person, this);
         },
@@ -377,7 +377,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             }
         },
 
-        updateFormFields: function OrgchartViewerDialog_updateFormFields()
+        updateFormFields: function OrgchartGroupViewerDialog_updateFormFields()
         {
             // Just element
             var el;
@@ -388,7 +388,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             el = Dom.get(this.options.controlId + "-currentValueDisplay");
             el.innerHTML = '';
             for (m in merged) {
-                el.innerHTML += '<div><img src="/share/res/components/images/filetypes/generic-user-16.png" '
+                el.innerHTML += '<div><img src="/share/res/components/images/filetypes/generic-group-16.png" '
                     + 'width="16" alt="" title="' + merged[m].name + '"> ' + merged[m].name + ' </div>';
             }
 
@@ -524,7 +524,7 @@ if (typeof Alvex == "undefined" || !Alvex)
 
             this.options.tree = new YAHOO.widget.TreeView(this.options.pickerId + "-groups");
             this.options.tree.singleNodeHighlight = true;
-            this.options.tree.subscribe("labelClick",this.options.tree.onEventToggleHighlight);
+            this.options.tree.subscribe("clickEvent",this.options.tree.onEventToggleHighlight);
             this.options.insituEditors = [];
 
             var rootNode = this.insertTreeLabel(this.options.tree.getRoot(), this.options.orgchart);
@@ -535,7 +535,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             //	}
             rootNode.expand();
 
-            this.options.tree.subscribe("clickEvent", this.treeViewClicked, null, this);
+            this.options.tree.subscribe("labelClick", this.treeViewClicked, null, this);
 
             this.options.tree.draw();
         },
@@ -573,10 +573,10 @@ if (typeof Alvex == "undefined" || !Alvex)
 
         treeViewClicked: function OrgchartGroupViewerDialog_treeViewClicked(node, manual)
         {
-            this.options.selectedGroup = node;
-            this.options.selectedGroup.id = node.labelElId;
-            this.fillRolesTable(this.options.selectedGroup.id);
-            if (!manual) this.groupClicked();
+            this.options.selectedGroup = node
+            this.options.selectedGroup.id = node.labelElId
+            this.fillRolesTable(this.options.selectedGroup.id)
+            if (!manual) { this.groupClicked(node.index) }
         },
 
         getGroupByIndex: function (index) {
@@ -604,20 +604,19 @@ if (typeof Alvex == "undefined" || !Alvex)
             this.options.GroupsArray = array;
         },
 
-        groupClicked: function OrgchartGroupViewer_groupClicked ()
+        groupClicked: function OrgchartGroupViewer_groupClicked (index)
         {
-            var index = this.options.tree.getNodeByProperty("highlightState",1);
             if (!(index == null)) {
-                var group = this.getGroupByIndex(index["index"]);
+                var group = this.getGroupByIndex(index);
 
                 // If person is not in current list and not in added list - add it to added list
-                if( (this.userInArray(this.options.assignees, group) == -1)
-                    && (this.userInArray(this.options.assignees_added, group) == -1) )
+                if( (this.groupInArray(this.options.assignees, group) == -1)
+                    && (this.groupInArray(this.options.assignees_added, group) == -1) )
                     this.options.assignees_added.push(group);
 
                 // If person is in removed list - remove it from removed
-                if( (this.userInArray(this.options.assignees_removed, group) != -1) )
-                    this.options.assignees_removed.splice( this.userInArray(this.options.assignees_removed, group), 1 );
+                if( (this.groupInArray(this.options.assignees_removed, group) != -1) )
+                    this.options.assignees_removed.splice( this.groupInArray(this.options.assignees_removed, group), 1 );
 
                 // Update UI
                 this.updateUI();
@@ -782,11 +781,11 @@ if (typeof Alvex == "undefined" || !Alvex)
                 + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'">'
                 + '<span>' + this.orgchart.msg("alvex.orgchart.button.view") + '</span></a></div>';
 
-
-            html += '<div class="' + 'addPerson' + '"><a rel="add" href="" '
-                    + 'class="orgchart-action-link ' + id + '-action-link"'
-                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'">'
-                    + '<span>' + this.orgchart.msg("alvex.orgchart.button.add") + '</span></a></div>';
+            // for now we can't add groups and people at the same time
+            //html += '<div class="' + 'addPerson' + '"><a rel="add" href="" '
+             //       + 'class="orgchart-action-link ' + id + '-action-link"'
+              //      + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'">'
+              //      + '<span>' + this.orgchart.msg("alvex.orgchart.button.add") + '</span></a></div>';
 
             html += '</div>';
 
@@ -798,20 +797,13 @@ if (typeof Alvex == "undefined" || !Alvex)
             var id = this.orgchart.id;
             var html = '';
 
-            if( this.orgchart.canAddAssignee() )
-            {
-                html += '<div class="' + 'addPersonTitle' + '"><a rel="add" href="" '
-                    + 'class="orgchart-action-link ' + id + '-action-link"'
-                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'"><img'
-                    + ' src="/share/res/components/images/filetypes/generic-user-32.png"'
-                    + ' width="32"/></a></div>';
-            } else {
-                html += '<div class="' + 'showUserInfoTitle' + '"><a rel="view" href="" '
-                    + 'class="orgchart-action-link ' + id + '-action-link"'
-                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'"><img'
-                    + ' src="/share/res/components/images/filetypes/generic-user-32.png"'
-                    + ' width="32"/></a></div>';
-            }
+
+            html += '<div class="' + 'showUserInfoTitle' + '"><a rel="view" href="" '
+                 + 'class="orgchart-action-link ' + id + '-action-link"'
+                 + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'"><img'
+                 + ' src="/share/res/components/images/filetypes/generic-user-32.png"'
+                 + ' width="32"/></a></div>';
+
 
             elLiner.innerHTML = html;
         },
@@ -822,25 +814,23 @@ if (typeof Alvex == "undefined" || !Alvex)
             var user = oRecord.getData();
             var html = '';
 
-            if( this.orgchart.canAddAssignee() )
-            {
-                html = '<div class="' + 'addPersonTitle' + '">'
-                    + '<h4 class="name"><a rel="add" href="" '
-                    + 'class="orgchart-action-link ' + id + '-action-link"'
-                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'">'
-                    + '<span>' + user.name + '</span></a></h4></div>';
-            } else {
-                html = '<div class="' + 'showUserInfoTitle' + '">'
+
+            html = '<div class="' + 'showUserInfoTitle' + '">'
                     + '<h4 class="name"><a rel="view" href="" '
                     + 'class="orgchart-action-link ' + id + '-action-link"'
                     + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'">'
                     + '<span>' + user.name + '</span></a></h4></div>';
-            }
+
 
             elLiner.innerHTML = html;
         },
 
-        showUserInfo: function OrgchartViewerDialog_showUserInfo(person)
+        showUserInfoTitle: function(person)
+        {
+            this.showUserInfo(person);
+        },
+
+        showUserInfo: function OrgchartGroupViewerDialog_showUserInfo(person)
         {
             var url = Alfresco.constants.PROXY_URI + "api/people/" + person.userName;
 
@@ -894,12 +884,12 @@ if (typeof Alvex == "undefined" || !Alvex)
             this.addPerson(person);
         },
 
-        usersEqual: function OrgchartViewerDialog_usersEqual(user1, user2)
+        usersEqual: function OrgchartGroupViewerDialog_usersEqual(user1, user2)
         {
             return user1.nodeRef === user2.nodeRef;
         },
 
-        userInArray: function OrgchartViewerDialog_userInArray(array, user)
+        groupInArray: function OrgchartGroupViewerDialog_groupInArray(array, user)
         {
             var i = array.length;
             while (i--)
@@ -911,15 +901,14 @@ if (typeof Alvex == "undefined" || !Alvex)
         // Add person to assignees
         addPerson: function OrgchartPickerDialog_addPerson(person)
         {
-            console.log(person);
             // If person is not in current list and not in added list - add it to added list
-            if( (this.userInArray(this.options.assignees, person) == -1)
-                && (this.userInArray(this.options.assignees_added, person) == -1) )
+            if( (this.groupInArray(this.options.assignees, person) == -1)
+                && (this.groupInArray(this.options.assignees_added, person) == -1) )
                 this.options.assignees_added.push(person);
 
             // If person is in removed list - remove it from removed
-            if( (this.userInArray(this.options.assignees_removed, person) != -1) )
-                this.options.assignees_removed.splice( this.userInArray(this.options.assignees_removed, person), 1 );
+            if( (this.groupInArray(this.options.assignees_removed, person) != -1) )
+                this.options.assignees_removed.splice( this.groupInArray(this.options.assignees_removed, person), 1 );
 
             // Update UI
             this.updateUI();
@@ -927,13 +916,13 @@ if (typeof Alvex == "undefined" || !Alvex)
 
         removePerson: function OrgchartPickerDialog_removePerson(event, person) {
             // If person is in current list and not in removed list - add it to removed list
-            if ((this.userInArray(this.options.assignees, person) != -1)
-                && (this.userInArray(this.options.assignees_removed, person) == -1))
+            if ((this.groupInArray(this.options.assignees, person) != -1)
+                && (this.groupInArray(this.options.assignees_removed, person) == -1))
                 this.options.assignees_removed.push(person);
 
             // If person is in added list - remove it from added list
-            if (this.userInArray(this.options.assignees_added, person) != -1)
-                this.options.assignees_added.splice(this.userInArray(this.options.assignees_added, person), 1);
+            if (this.groupInArray(this.options.assignees_added, person) != -1)
+                this.options.assignees_added.splice(this.groupInArray(this.options.assignees_added, person), 1);
 
             // Update UI
             this.updateUI();
