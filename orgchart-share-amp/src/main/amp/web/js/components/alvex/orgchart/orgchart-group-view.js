@@ -513,7 +513,7 @@ if (typeof Alvex == "undefined" || !Alvex)
                 }
             }
             // Emulate click - fill user table automatically
-            this.treeViewClicked(targetNode, true);
+            this.treeViewClicked(targetNode);
         },
 
         // Fill tree view group selector with orgchart data
@@ -536,8 +536,20 @@ if (typeof Alvex == "undefined" || !Alvex)
             rootNode.expand();
 
             this.options.tree.subscribe("labelClick", this.treeViewClicked, null, this);
-
+            this.options.tree.subscribe("expandComplete", this.onExpandComplete, this, true);
             this.options.tree.draw();
+            this.onExpandComplete(null);
+            this.showMyUnit();
+        },
+
+        onExpandComplete: function DLT_onExpandComplete(oNode)
+        {
+            for (var i in this.options.insituEditors)
+                Alfresco.util.createInsituEditor(
+                    this.options.insituEditors[i].context,
+                    this.options.insituEditors[i].params,
+                    this.options.insituEditors[i].callback
+                );
         },
 
         insertTreeLabel: function OrgchartGroupViewerDialog_insertTreeLabel(curRoot, newNode)
@@ -559,7 +571,7 @@ if (typeof Alvex == "undefined" || !Alvex)
                         unitID: newNode.id,
                         unitName: newNode.displayName,
                         curElem: curElem,
-                        orgchartAdmin: me,
+                        orgchartPicker: me,
                         unit: newNode
                     },
                     callback: null
@@ -571,12 +583,11 @@ if (typeof Alvex == "undefined" || !Alvex)
             return curElem;
         },
 
-        treeViewClicked: function OrgchartGroupViewerDialog_treeViewClicked(node, manual)
+        treeViewClicked: function OrgchartGroupViewerDialog_treeViewClicked(node)
         {
-            this.options.selectedGroup = node
-            this.options.selectedGroup.id = node.labelElId
-            this.fillRolesTable(this.options.selectedGroup.id)
-            if (!manual) { this.groupClicked(node.index) }
+            this.options.selectedGroup = node;
+            this.options.selectedGroup.id = node.labelElId;
+            this.fillRolesTable(this.options.selectedGroup.id);
         },
 
         getGroupByIndex: function (index) {
@@ -602,25 +613,6 @@ if (typeof Alvex == "undefined" || !Alvex)
             };
             crtGrps(this.options.orgchart);
             this.options.GroupsArray = array;
-        },
-
-        groupClicked: function OrgchartGroupViewer_groupClicked (index)
-        {
-            if (!(index == null)) {
-                var group = this.getGroupByIndex(index);
-
-                // If person is not in current list and not in added list - add it to added list
-                if( (this.groupInArray(this.options.assignees, group) == -1)
-                    && (this.groupInArray(this.options.assignees_added, group) == -1) )
-                    this.options.assignees_added.push(group);
-
-                // If person is in removed list - remove it from removed
-                if( (this.groupInArray(this.options.assignees_removed, group) != -1) )
-                    this.options.assignees_removed.splice( this.groupInArray(this.options.assignees_removed, group), 1 );
-
-                // Update UI
-                this.updateUI();
-            }
         },
 
         initUsersTable: function OrgchartGroupViewerDialog_initUsersTable()
@@ -781,12 +773,6 @@ if (typeof Alvex == "undefined" || !Alvex)
                 + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'">'
                 + '<span>' + this.orgchart.msg("alvex.orgchart.button.view") + '</span></a></div>';
 
-            // for now we can't add groups and people at the same time
-            //html += '<div class="' + 'addPerson' + '"><a rel="add" href="" '
-             //       + 'class="orgchart-action-link ' + id + '-action-link"'
-              //      + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'">'
-              //      + '<span>' + this.orgchart.msg("alvex.orgchart.button.add") + '</span></a></div>';
-
             html += '</div>';
 
             elLiner.innerHTML = html;
@@ -879,11 +865,6 @@ if (typeof Alvex == "undefined" || !Alvex)
             Dom.addClass(elActions, "hidden");
         },
 
-        addPersonTitle: function(person)
-        {
-            this.addPerson(person);
-        },
-
         usersEqual: function OrgchartGroupViewerDialog_usersEqual(user1, user2)
         {
             return user1.nodeRef === user2.nodeRef;
@@ -899,16 +880,16 @@ if (typeof Alvex == "undefined" || !Alvex)
         },
 
         // Add person to assignees
-        addPerson: function OrgchartPickerDialog_addPerson(person)
+        addGroup: function OrgchartPickerDialog_addGroup(group)
         {
-            // If person is not in current list and not in added list - add it to added list
-            if( (this.groupInArray(this.options.assignees, person) == -1)
-                && (this.groupInArray(this.options.assignees_added, person) == -1) )
-                this.options.assignees_added.push(person);
+            // If group is not in current list and not in added list - add it to added list
+            if( (this.groupInArray(this.options.assignees, group) == -1)
+                && (this.groupInArray(this.options.assignees_added, group) == -1) )
+                this.options.assignees_added.push(group);
 
-            // If person is in removed list - remove it from removed
-            if( (this.groupInArray(this.options.assignees_removed, person) != -1) )
-                this.options.assignees_removed.splice( this.groupInArray(this.options.assignees_removed, person), 1 );
+            // If group is in removed list - remove it from removed
+            if( (this.groupInArray(this.options.assignees_removed, group) != -1) )
+                this.options.assignees_removed.splice( this.groupInArray(this.options.assignees_removed, group), 1 );
 
             // Update UI
             this.updateUI();
@@ -944,16 +925,6 @@ if (typeof Alvex == "undefined" || !Alvex)
 
         // Create icons instances
         this.openIcon = new Alfresco.widget.InsituEditorOrgchartOpen(this, p_params);
-        if( ( this.params.mode == "admin" ) || ( this.params.unit.isAdmin == "true" ) )
-        {
-            this.rolesIcon = new Alfresco.widget.InsituEditorOrgchartRoles(this, p_params);
-            this.editIcon = new Alfresco.widget.InsituEditorOrgchartEdit(this, p_params);
-            if( this.params.syncSource == 'none' )
-            {
-                this.addIcon = new Alfresco.widget.InsituEditorOrgchartAdd(this, p_params);
-                this.deleteIcon = new Alfresco.widget.InsituEditorOrgchartDelete(this, p_params);
-            }
-        }
 
         return this;
     };
@@ -988,10 +959,11 @@ if (typeof Alvex == "undefined" || !Alvex)
         this.editor = p_editor;
         this.params = YAHOO.lang.merge({}, p_params);
         this.disabled = p_params.disabled;
+        this.curElem = p_params.curElem;
 
         this.editIcon = document.createElement("span");
-        this.editIcon.title = Alfresco.util.encodeHTML(p_params.orgchartAdmin.msg("alvex.orgchart.unit_members"));
-        Dom.addClass(this.editIcon, "insitu-open-orgchart");
+        this.editIcon.title = Alfresco.util.encodeHTML(p_params.orgchartPicker.msg("alvex.orgchart.unit_members"));
+        Dom.addClass(this.editIcon, "insitu-addgroup-orgchart");
 
         this.params.context.appendChild(this.editIcon, this.params.context);
         Event.on(this.params.context, "mouseover", this.onContextMouseOver, this);
@@ -1004,380 +976,14 @@ if (typeof Alvex == "undefined" || !Alvex)
         {
             onIconClick: function InsituEditorOrgchartOpen_onIconClick(e, obj)
             {
-                var curNode = {};
-                curNode.id = obj.params.unitID;
-                curNode.displayName = obj.params.unitName;
-                curNode.name = obj.params.unitName;
-                curNode.isAdmin = obj.params.unit.isAdmin;
-                obj.params.orgchartAdmin.showViewDialog(curNode);
+                var index = obj.curElem.index;
+                if (!(index == null)) {
+                    var group = obj.params.orgchartPicker.getGroupByIndex(index);
+                    obj.params.orgchartPicker.addGroup(group);
+                }
                 Event.stopEvent(e);
             }
         });
 
-    Alfresco.widget.InsituEditorOrgchartRoles = function(p_editor, p_params)
-    {
-        this.editor = p_editor;
-        this.params = YAHOO.lang.merge({}, p_params);
-        this.disabled = p_params.disabled;
-
-        this.editIcon = document.createElement("span");
-        this.editIcon.title = Alfresco.util.encodeHTML(p_params.orgchartAdmin.msg("alvex.orgchart.unit_roles"));
-        Dom.addClass(this.editIcon, "insitu-roles-orgchart");
-
-        this.params.context.appendChild(this.editIcon, this.params.context);
-        Event.on(this.params.context, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.params.context, "mouseout", this.onContextMouseOut, this);
-        Event.on(this.editIcon, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.editIcon, "mouseout", this.onContextMouseOut, this);
-    };
-
-    YAHOO.extend(Alfresco.widget.InsituEditorOrgchartRoles, Alfresco.widget.InsituEditorIcon,
-        {
-            onIconClick: function InsituEditorOrgchartRoles_onIconClick(e, obj)
-            {
-                var curNode = {};
-                curNode.id = obj.params.unitID;
-                curNode.displayName = obj.params.unitName;
-                obj.params.orgchartAdmin.editUnitRoles(curNode);
-                Event.stopEvent(e);
-            }
-        });
-
-    Alfresco.widget.InsituEditorOrgchartEdit = function(p_editor, p_params)
-    {
-        this.editor = p_editor;
-        this.params = YAHOO.lang.merge({}, p_params);
-        this.disabled = p_params.disabled;
-
-        this.editIcon = document.createElement("span");
-        this.editIcon.title = Alfresco.util.encodeHTML(p_params.orgchartAdmin.msg("alvex.orgchart.edit_unit"));
-        Dom.addClass(this.editIcon, "insitu-edit-orgchart");
-
-        this.params.context.appendChild(this.editIcon, this.params.context);
-        Event.on(this.params.context, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.params.context, "mouseout", this.onContextMouseOut, this);
-        Event.on(this.editIcon, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.editIcon, "mouseout", this.onContextMouseOut, this);
-    };
-
-    YAHOO.extend(Alfresco.widget.InsituEditorOrgchartEdit, Alfresco.widget.InsituEditorIcon,
-        {
-            onIconClick: function InsituEditorOrgchartEdit_onIconClick(e, obj)
-            {
-                var oa = obj.params.orgchartAdmin;
-                var id = obj.params.unitID;
-                var curElem = obj.params.curElem;
-
-                // Intercept before dialog show
-                var doBeforeDialogShow = function(p_form, p_dialog)
-                {
-                    Alfresco.util.populateHTML(
-                        [ p_dialog.id + "-dialogTitle", oa.msg("alvex.orgchart.edit_unit") ],
-                        [ p_dialog.id + "-dialogHeader", oa.msg("alvex.orgchart.edit_unit") ]
-                    );
-                };
-
-                var templateUrl = YAHOO.lang.substitute(
-                    Alfresco.constants.URL_SERVICECONTEXT
-                    + "components/form?itemKind={itemKind}&itemId={itemId}&mode={mode}"
-                    + "&submitType={submitType}&showCancelButton=true",
-                    {
-                        itemKind: "node",
-                        itemId: 'workspace://SpacesStore/' + id,
-                        mode: "edit",
-                        submitType: "json"
-                    });
-
-                // Using Forms Service, so always create new instance
-                var editUnitDialog = new Alfresco.module.SimpleDialog(oa.id + "-editUnitDialog");
-
-                editUnitDialog.setOptions(
-                    {
-                        width: "33em",
-                        templateUrl: templateUrl,
-                        actionUrl: null,
-                        destroyOnHide: true,
-
-                        doBeforeDialogShow:
-                        {
-                            fn: doBeforeDialogShow,
-                            scope: oa
-                        },
-                        // Intercept form submit and send requests to our API instead
-                        doBeforeAjaxRequest:
-                        {
-                            fn: function(config, obj)
-                            {
-                                // The first 'queue' - update unit
-                                // We need ID from server to start adding admins / supervisors / roles
-                                var queue = [];
-                                queue.push({
-                                    url: Alfresco.constants.PROXY_URI + "api/alvex/orgchart/units/" + id,
-                                    method: Alfresco.util.Ajax.POST,
-                                    dataObj: {
-                                        data: {
-                                            displayName : config.dataObj.prop_alvexoc_unitDisplayName,
-                                            weight : config.dataObj.prop_alvexoc_unitWeight
-                                        }
-                                    },
-                                    requestContentType: Alfresco.util.Ajax.JSON,
-                                    successCallback:
-                                    {
-                                        fn: function (response, obj)
-                                        {
-                                            curElem.label = response.json.data.displayName;
-                                            curElem.refresh();
-                                            this.onExpandComplete(null);
-                                            if (response.serverResponse.statusText)
-                                            {
-                                                Alfresco.util.PopupManager.displayMessage({ text: response.serverResponse.statusText });
-                                            }
-
-                                            // Change admins / supervisors / roles
-                                            this.changeUnitAssocs(response.json.data.id, obj.dataObj);
-                                        },
-                                        obj: { dataObj: config.dataObj },
-                                        scope: this
-                                    },
-                                    failureCallback:
-                                    {
-                                        fn: function (response, obj)
-                                        {
-                                            Alfresco.util.PopupManager.displayMessage({ text: "Failure" });
-                                        },
-                                        scope: this
-                                    }
-                                });
-
-                                Alvex.util.processAjaxQueue({
-                                    queue: queue
-                                });
-
-                                if( obj )
-                                    obj.hide();
-
-                                return false;
-                            },
-                            scope: oa,
-                            obj: editUnitDialog
-                        }
-                    }).show();
-                Event.stopEvent(e);
-            }
-        });
-
-    Alfresco.widget.InsituEditorOrgchartAdd = function(p_editor, p_params)
-    {
-        this.editor = p_editor;
-        this.params = YAHOO.lang.merge({}, p_params);
-        this.disabled = p_params.disabled;
-
-        this.editIcon = document.createElement("span");
-        this.editIcon.title = Alfresco.util.encodeHTML(p_params.orgchartAdmin.msg("alvex.orgchart.add_unit"));
-        Dom.addClass(this.editIcon, "insitu-add-orgchart");
-
-        this.params.context.appendChild(this.editIcon, this.params.context);
-        Event.on(this.params.context, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.params.context, "mouseout", this.onContextMouseOut, this);
-        Event.on(this.editIcon, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.editIcon, "mouseout", this.onContextMouseOut, this);
-    };
-
-    YAHOO.extend(Alfresco.widget.InsituEditorOrgchartAdd, Alfresco.widget.InsituEditorIcon,
-        {
-            onIconClick: function InsituEditorOrgchartAdd_onIconClick(e, obj)
-            {
-                var oa = obj.params.orgchartAdmin;
-                var parent = obj.params.unitID;
-                var curElem = obj.params.curElem;
-
-                // Intercept before dialog show
-                var doBeforeDialogShow = function(p_form, p_dialog)
-                {
-                    Alfresco.util.populateHTML(
-                        [ p_dialog.id + "-dialogTitle", oa.msg("alvex.orgchart.add_unit") ],
-                        [ p_dialog.id + "-dialogHeader", oa.msg("alvex.orgchart.add_unit") ]
-                    );
-                };
-
-                var templateUrl = YAHOO.lang.substitute(
-                    Alfresco.constants.URL_SERVICECONTEXT
-                    + "components/form?itemKind={itemKind}&itemId={itemId}&mode={mode}"
-                    + "&submitType={submitType}&showCancelButton=true",
-                    {
-                        itemKind: "type",
-                        itemId: "alvexoc:unit",
-                        mode: "create",
-                        submitType: "json"
-                    });
-
-                // Using Forms Service, so always create new instance
-                var addUnitDialog = new Alfresco.module.SimpleDialog(oa.id + "-addUnitDialog");
-
-                addUnitDialog.setOptions(
-                    {
-                        width: "33em",
-                        templateUrl: templateUrl,
-                        actionUrl: null,
-                        destroyOnHide: true,
-
-                        doBeforeDialogShow:
-                        {
-                            fn: doBeforeDialogShow,
-                            scope: oa
-                        },
-                        // Intercept form submit and send requests to our API instead
-                        doBeforeAjaxRequest:
-                        {
-                            fn: function(config, obj)
-                            {
-                                // The first 'queue' - create unit
-                                // We need ID from server to start adding admins / supervisors / roles
-                                var queue = [];
-                                queue.push({
-                                    url: Alfresco.constants.PROXY_URI + "api/alvex/orgchart/units/" + parent,
-                                    method: Alfresco.util.Ajax.PUT,
-                                    dataObj: {
-                                        data: {
-                                            name : Alvex.util.createClearNodeName(
-                                                config.dataObj.prop_alvexoc_unitDisplayName),
-                                            displayName : config.dataObj.prop_alvexoc_unitDisplayName,
-                                            weight : config.dataObj.prop_alvexoc_unitWeight
-                                        }
-                                    },
-                                    requestContentType: Alfresco.util.Ajax.JSON,
-                                    successCallback:
-                                    {
-                                        fn: function (response, obj)
-                                        {
-                                            var newNode = {};
-                                            newNode.name = response.json.data.displayName;
-                                            newNode.displayName = response.json.data.displayName;
-                                            newNode.id = response.json.data.id;
-                                            newNode.isAdmin = "true";
-
-                                            // Update UI
-                                            this.insertTreeLabel( curElem, newNode );
-                                            curElem.refresh();
-                                            this.onExpandComplete(null);
-
-                                            if (response.serverResponse.statusText)
-                                            {
-                                                Alfresco.util.PopupManager.displayMessage({ text: response.serverResponse.statusText });
-                                            }
-
-                                            // Add admins / supervisors / roles
-                                            this.changeUnitAssocs(newNode.id, obj.dataObj);
-                                        },
-                                        obj: { dataObj: config.dataObj },
-                                        scope: this
-                                    },
-                                    failureCallback:
-                                    {
-                                        fn: function (response, obj)
-                                        {
-                                            Alfresco.util.PopupManager.displayMessage({ text: "Failure" });
-                                        },
-                                        scope: this
-                                    }
-                                });
-
-                                Alvex.util.processAjaxQueue({
-                                    queue: queue
-                                });
-
-                                if( obj )
-                                    obj.hide();
-
-                                return false;
-                            },
-                            scope: oa,
-                            obj: addUnitDialog
-                        }
-                    }).show();
-                Event.stopEvent(e);
-            }
-        });
-
-    Alfresco.widget.InsituEditorOrgchartDelete = function(p_editor, p_params)
-    {
-        this.editor = p_editor;
-        this.params = YAHOO.lang.merge({}, p_params);
-        this.disabled = p_params.disabled;
-
-        this.editIcon = document.createElement("span");
-        this.editIcon.title = Alfresco.util.encodeHTML(p_params.orgchartAdmin.msg("alvex.orgchart.delete_unit"));
-        Dom.addClass(this.editIcon, "insitu-delete-orgchart");
-
-        this.params.context.appendChild(this.editIcon, this.params.context);
-        Event.on(this.params.context, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.params.context, "mouseout", this.onContextMouseOut, this);
-        Event.on(this.editIcon, "mouseover", this.onContextMouseOver, this);
-        Event.on(this.editIcon, "mouseout", this.onContextMouseOut, this);
-    };
-
-    YAHOO.extend(Alfresco.widget.InsituEditorOrgchartDelete, Alfresco.widget.InsituEditorIcon,
-        {
-            onIconClick: function InsituEditorOrgchartDelete_onIconClick(e, obj)
-            {
-                var oa = obj.params.orgchartAdmin;
-                Alfresco.util.PopupManager.displayPrompt(
-                    {
-                        title: oa.msg("alvex.orgchart.delete_unit"),
-                        text: oa.msg("alvex.orgchart.delete_unit_text",  Alfresco.util.encodeHTML(obj.params.unitName)),
-                        buttons: [
-                            {
-                                text: oa.msg("button.delete"),
-                                handler: function()
-                                {
-                                    // Delete org chart unit
-                                    Alfresco.util.Ajax.jsonRequest({
-                                        url: Alfresco.constants.PROXY_URI
-                                        + "api/alvex/orgchart/units/" + encodeURIComponent(obj.params.unitID) + "?alf_method=DELETE",
-                                        method: Alfresco.util.Ajax.POST,
-                                        dataObj: null,
-                                        successCallback:
-                                        {
-                                            fn: function (response)
-                                            {
-                                                var parent = obj.params.curElem.parent;
-                                                obj.params.orgchartAdmin.options.tree.removeNode( obj.params.curElem );
-                                                parent.refresh();
-                                                obj.params.orgchartAdmin.onExpandComplete(null);
-
-                                                if (response.serverResponse.statusText)
-                                                {
-                                                    Alfresco.util.PopupManager.displayMessage({ text: response.serverResponse.statusText });
-                                                }
-                                            },
-                                            scope:this
-                                        },
-                                        failureCallback:
-                                        {
-                                            fn: function (response)
-                                            {
-                                                if (response.serverResponse.statusText)
-                                                {
-                                                    Alfresco.util.PopupManager.displayMessage({ text: response.serverResponse.statusText });
-                                                }
-                                            },
-                                            scope:this
-                                        }
-                                    });
-                                    this.destroy();
-                                }
-                            },
-                            {
-                                text: oa.msg("button.cancel"),
-                                handler: function()
-                                {
-                                    this.destroy();
-                                },
-                                isDefault: true
-                            }]
-                    });
-                Event.stopEvent(e);
-            }
-        });
 
 })();

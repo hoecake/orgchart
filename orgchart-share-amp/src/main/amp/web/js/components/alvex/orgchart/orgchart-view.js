@@ -2815,7 +2815,7 @@ var labelType, useGradients, nativeTextSupport, animate;
 
 			// If person is in removed list - remove it from removed
 			if( (this.userInArray(this.options.assignees_removed, person) != -1) )
-				this.options.assignees_removed.splice( this.userInArray(this.options.assignees_removed, person), 1 );
+				this.options.assignees_removed. manualsplice( this.userInArray(this.options.assignees_removed, person), 1 );
 
 			// Update UI
 			this.updateUI();
