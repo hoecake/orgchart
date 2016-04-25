@@ -10,14 +10,20 @@
 			<div id="doc4">
 			
 				<div class="yui-gb orgchart-picker-menu">
-					<!--
+
 					<div id="${pickerId}-searchContainer" class="yui-u first yui-skin-sam picker-search">
 						<input type="text" class="search-input" name="-" id="${pickerId}-searchText" value="" maxlength="256" />
 						<span class="search-button"><button id="${pickerId}-searchButton" name="-">${msg("alvex.orgchart.search")}</button></span>
 					</div>
-					-->
+
+                    <div id="${pickerId}-view-selector" class="yui-u yui-skin-sam picker-view-selector">
+                        <strong>${msg("alvex.orgchart.show_by")} </strong>
+                        <span id="${pickerId}-view-roles">${msg("alvex.orgchart.show_by_role")}</span>
+                        <span id="${pickerId}-view-people">${msg("alvex.orgchart.show_by_name")}</span>
+                    </div>
 
 					<div class="yui-u yui-skin-sam">
+
 					</div>
 				</div>
 				

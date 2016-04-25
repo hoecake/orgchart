@@ -63,7 +63,7 @@ if (typeof Alvex == "undefined" || !Alvex)
             // Datasource for datatable
             usersDataSource: null,
             // Data store for datatable as JS array
-            usersDataStore: [],
+            DataStore: [],
             // Orgchart
             orgchart: null,
             // JIT object
@@ -78,7 +78,9 @@ if (typeof Alvex == "undefined" || !Alvex)
             // Orgchart branch we are working with
             curBranch: 'default',
             // All orgchart branches
-            branches: []
+            branches: [],
+            //Show people by roles or by name
+            pickerView: "roles"
         },
 
         onFormDestroyed: function()
@@ -257,23 +259,24 @@ if (typeof Alvex == "undefined" || !Alvex)
 
         },
 
-        canAddAssignee: function()
-        {
-            return ( ! (this.options.disabled
-            || ( (this.options.multipleSelectMode == false)
-            && (this.options.assignees.length
-            + this.options.assignees_added.length
-            - this.options.assignees_removed.length > 0) )	) );
+        togglePeopleView: function OrgchartViewerDialog_togglePeopleView(event) {
+            this.options.pickerView = 'people';
+            if(this.options.selectedGroup != null)
+                this.fillPeopleTable(this.options.selectedGroup.id);
         },
 
-        getRemoveButtonHTML: function OrgchartGroupViewerDialog_getRemoveButtonHTML(person)
-        {
+        toggleRolesView: function OrgchartViewerDialog_toggleRolesView(event) {
+            this.options.pickerView = 'roles';
+            if(this.options.selectedGroup != null)
+                this.fillRolesTable(this.options.selectedGroup.id);
+        },
+
+        getRemoveButtonHTML: function OrgchartGroupViewerDialog_getRemoveButtonHTML(person) {
             return '<span class="remove-item" id="' + person.nodeRef
                 + '"><img src="/share/res/components/images/remove-icon-16.png" width="16"/></span>';
         },
 
-        updateUI: function()
-        {
+        updateUI: function() {
             // Final assignees list with all adds and removes
             var merged = this.getCurrentAssigneesList();
 
@@ -296,7 +299,7 @@ if (typeof Alvex == "undefined" || !Alvex)
 
         attachRemoveClickListener: function OrgchartGroupViewerDialog_attachRemoveClickListener(person)
         {
-            YAHOO.util.Event.on(person.nodeRef, 'click', this.removePerson, person, this);
+            YAHOO.util.Event.on(person.nodeRef, 'click', this.removeGroup, person, this);
         },
 
         // Build final list by merging all adds and removes
@@ -325,13 +328,16 @@ if (typeof Alvex == "undefined" || !Alvex)
                 });
             this.widgets.dialog.hideEvent.subscribe(this.onCancel, null, this);
 
-            // Setup search button -- Removed for now
-            //this.widgets.searchButton = new YAHOO.widget.Button(this.options.pickerId + "-searchButton");
-            //this.widgets.searchButton.on("click", this.onSearch, this.widgets.searchButton, this);
+            // Register listeners for people/roles switchers
+            YAHOO.util.Event.on(this.options.pickerId + "-view-people", 'click', this.togglePeopleView, null, this);
+            YAHOO.util.Event.on(this.options.pickerId + "-view-roles", 'click', this.toggleRolesView, null, this);
 
+            // Setup search button
+            this.widgets.searchButton = new YAHOO.widget.Button(this.options.pickerId + "-searchButton");
+            this.widgets.searchButton.on("click", this.onSearch, this.widgets.searchButton, this);
+            
             // Register the "enter" event on the search text field
-            /* -------------------- Search disabled for now
-             var zinput = Dom.get(this.options.pickerId + "-searchText");
+            var zinput = Dom.get(this.options.pickerId + "-searchText");
             new YAHOO.util.KeyListener(zinput,
                 {
                     keys: 13
@@ -341,7 +347,7 @@ if (typeof Alvex == "undefined" || !Alvex)
                     scope: this,
                     correctScope: true
                 }, "keydown").enable();
-            */
+
             // Create orgchart tree in the dialog
             this.fillPickerDialog();
 
@@ -350,6 +356,35 @@ if (typeof Alvex == "undefined" || !Alvex)
 
             Dom.addClass(this.options.pickerId, "object-finder");
         },
+        
+        onSearch: function () {
+            if (typeof this.options.GroupsArray == "undefined") {
+                this.createGroupsArray()
+            }
+            var arr = this.options.GroupsArray;
+            var searchTerm = Dom.get(this.options.pickerId + "-searchText").value.toLowerCase();
+
+            //Clearing current list of users/groups
+            this.options.DataStore.length = 0;
+
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i].name.indexOf(searchTerm) !== -1) {
+                    this.options.DataStore.push({
+                        name: arr[i].name,
+                        userName: arr[i].name,
+                        nodeRef: arr[i].nodeRef,
+                        role: "Search results",
+                        isGroup: true
+                    });
+                }
+            }
+
+            //forcing userDataTable to pick up current userList
+            this.options.usersDataTable.getDataSource().sendRequest('',
+                { success: this.options.usersDataTable.onDataReturnInitializeTable, scope: this.options.usersDataTable }
+            );
+        },
+        
 
         onOk: function(e, p_obj)
         {
@@ -587,7 +622,10 @@ if (typeof Alvex == "undefined" || !Alvex)
         {
             this.options.selectedGroup = node;
             this.options.selectedGroup.id = node.labelElId;
-            this.fillRolesTable(this.options.selectedGroup.id);
+            if( this.options.pickerView == 'roles' )
+                this.fillRolesTable(this.options.selectedGroup.id);
+            else
+                this.fillPeopleTable(this.options.selectedGroup.id);
         },
 
         getGroupByIndex: function (index) {
@@ -598,7 +636,6 @@ if (typeof Alvex == "undefined" || !Alvex)
             }
             return this.options.GroupsArray[index - 1]
         },
-
 
         //FIXME!
         createGroupsArray: function () {
@@ -648,14 +685,13 @@ if (typeof Alvex == "undefined" || !Alvex)
             // For instance, orgchart browsing and user search are provided by different APIs
             // We are not sure about urls and resp schema of APIs we may need
             // So we have an option to fill js array locally after ajax request to any url
-            this.options.usersDataSource = new YAHOO.util.DataSource(this.options.usersDataStore);
+            this.options.usersDataSource = new YAHOO.util.DataSource(this.options.DataStore);
             this.options.usersDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
             this.options.usersDataSource.responseSchema = {
-                fields: ["name", "userName", "nodeRef", "roleDisplayName"]
+                fields: ["name", "userName", "nodeRef", "roleDisplayName", "isGroup"]
             };
 
-            this.options.usersDataSource.doBeforeParseData = function f(oRequest, oFullResponse)
-            {
+            this.options.usersDataSource.doBeforeParseData = function f(oRequest, oFullResponse) {
                 // Remove duplicates that happen when we list users by name
                 //		and have one user in multiple roles
                 var response = [];
@@ -689,8 +725,17 @@ if (typeof Alvex == "undefined" || !Alvex)
                 this.fillRolesTable(this.options.selectedGroup.id);
         },
 
-        fillRolesTable: function OrgchartGroupViewerDialog_fillRolesTable(node_id)
+        fillPeopleTable: function OrgchartViewerDialog_fillPeopleTable(node_id)
         {
+            Dom.addClass( this.options.pickerId + "-view-people", "badge-highlight" );
+            Dom.removeClass( this.options.pickerId + "-view-roles", "badge-highlight" );
+            this.fillTable(node_id, false);
+        },
+
+        fillRolesTable: function OrgchartViewerDialog_fillRolesTable(node_id)
+        {
+            Dom.removeClass( this.options.pickerId + "-view-people", "badge-highlight" );
+            Dom.addClass( this.options.pickerId + "-view-roles", "badge-highlight" );
             this.fillTable(node_id, true);
         },
 
@@ -701,7 +746,7 @@ if (typeof Alvex == "undefined" || !Alvex)
                 return;
 
             // clear data for display
-            this.options.usersDataStore.length = 0;
+            this.options.DataStore.length = 0;
 
             var url = YAHOO.lang.substitute(
                 "{proxy}/api/alvex/orgchart/units/{unit}",
@@ -745,7 +790,7 @@ if (typeof Alvex == "undefined" || !Alvex)
 
                         for( var p in people )
                         {
-                            this.options.usersDataStore.push( people[p]
+                            this.options.DataStore.push( people[p]
                                 /*{
                                  name: people[p].name,
                                  userName: people[p].userName,
@@ -763,16 +808,51 @@ if (typeof Alvex == "undefined" || !Alvex)
             });
         },
 
+        sortPeople: function OrgchartViewerDialog_toggleRolesView(people)
+        {
+            people.sort( function(a,b){
+                var roleA=a.roleDisplayName.toLowerCase();
+                var roleB=b.roleDisplayName.toLowerCase();
+                var nameA;
+                if( (a.lastName != undefined) && (a.firstName != undefined ) )
+                    nameA = a.lastName.toLowerCase() + ' ' + a.firstName.toLowerCase();
+                else
+                    nameA = a.name.toLowerCase();
+                var nameB;
+                if( (b.lastName != undefined) && (b.firstName != undefined ) )
+                    nameB = b.lastName.toLowerCase() + ' ' + b.firstName.toLowerCase();
+                else
+                    nameB = b.name.toLowerCase();
+                if (roleA < roleB)
+                    return -1;
+                if (roleA > roleB)
+                    return 1;
+                if (nameA < nameB)
+                    return -1;
+                if (nameA > nameB)
+                    return 1;
+                return 0;
+            } );
+        },
+
         formatActionsField: function (elLiner, oRecord, oColumn, oData)
         {
             var id = this.orgchart.id;
+            var user = oRecord.getData();
             var html = '<div id="' + id + '-actions-' + oRecord.getId() + '" class="action hidden">';
+            //FIXME this is hack to show groups after Search
+            if (user.isGroup) {
+                html += '<div class="' + 'addGroup' + '"><a rel="add" href="" '
+                    + 'class="orgchart-action-link ' + id + '-action-link"'
+                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'">'
+                    + '<span>' + this.orgchart.msg("alvex.orgchart.button.add") + '</span></a></div>';
+            } else {
 
-            html += '<div class="' + 'showUserInfo' + '"><a rel="view" href="" '
-                + 'class="orgchart-action-link ' + id + '-action-link"'
-                + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'">'
-                + '<span>' + this.orgchart.msg("alvex.orgchart.button.view") + '</span></a></div>';
-
+                html += '<div class="' + 'showUserInfo' + '"><a rel="view" href="" '
+                    + 'class="orgchart-action-link ' + id + '-action-link"'
+                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") + '">'
+                    + '<span>' + this.orgchart.msg("alvex.orgchart.button.view") + '</span></a></div>';
+            }
             html += '</div>';
 
             elLiner.innerHTML = html;
@@ -782,14 +862,22 @@ if (typeof Alvex == "undefined" || !Alvex)
         {
             var id = this.orgchart.id;
             var html = '';
+            var user = oRecord.getData();
 
-
-            html += '<div class="' + 'showUserInfoTitle' + '"><a rel="view" href="" '
-                 + 'class="orgchart-action-link ' + id + '-action-link"'
-                 + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'"><img'
-                 + ' src="/share/res/components/images/filetypes/generic-user-32.png"'
-                 + ' width="32"/></a></div>';
-
+            //FIXME this is hack to show groups after Search
+            if (user.isGroup) {
+                html += '<div class="' + 'addGroupTitle' + '"><a rel="add" href="" '
+                    + 'class="orgchart-action-link ' + id + '-action-link"'
+                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.add") +'"><img'
+                    + ' src="/share/res/components/images/filetypes/generic-group-32.png"'
+                    + ' width="32"/></a></div>';
+            } else {
+                html += '<div class="' + 'showUserInfoTitle' + '"><a rel="view" href="" '
+                    + 'class="orgchart-action-link ' + id + '-action-link"'
+                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") + '"><img'
+                    + ' src="/share/res/components/images/filetypes/generic-user-32.png"'
+                    + ' width="32"/></a></div>';
+            }
 
             elLiner.innerHTML = html;
         },
@@ -799,15 +887,20 @@ if (typeof Alvex == "undefined" || !Alvex)
             var id = this.orgchart.id;
             var user = oRecord.getData();
             var html = '';
-
-
-            html = '<div class="' + 'showUserInfoTitle' + '">'
+            
+            if (user.isGroup) {
+                html = '<div class="' + 'addGroupTitle' + '">'
+                    + '<h4 class="name"><a rel="add" href="" '
+                    + 'class="orgchart-action-link ' + id + '-action-link"'
+                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") + '">'
+                    + '<span>' + user.name + '</span></a></h4></div>';
+            } else {
+                html = '<div class="' + 'showUserInfoTitle' + '">'
                     + '<h4 class="name"><a rel="view" href="" '
                     + 'class="orgchart-action-link ' + id + '-action-link"'
-                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") +'">'
+                    + 'title="' + this.orgchart.msg("alvex.orgchart.button.view") + '">'
                     + '<span>' + user.name + '</span></a></h4></div>';
-
-
+            }
             elLiner.innerHTML = html;
         },
 
@@ -879,6 +972,10 @@ if (typeof Alvex == "undefined" || !Alvex)
             return -1;
         },
 
+        addGroupTitle: function (group) {
+            this.addGroup(group);
+        },
+
         // Add person to assignees
         addGroup: function OrgchartPickerDialog_addGroup(group)
         {
@@ -895,15 +992,15 @@ if (typeof Alvex == "undefined" || !Alvex)
             this.updateUI();
         },
 
-        removePerson: function OrgchartPickerDialog_removePerson(event, person) {
-            // If person is in current list and not in removed list - add it to removed list
-            if ((this.groupInArray(this.options.assignees, person) != -1)
-                && (this.groupInArray(this.options.assignees_removed, person) == -1))
-                this.options.assignees_removed.push(person);
+        removeGroup: function OrgchartPickerDialog_removeGroup(event, group) {
+            // If group is in current list and not in removed list - add it to removed list
+            if ((this.groupInArray(this.options.assignees, group) != -1)
+                && (this.groupInArray(this.options.assignees_removed, group) == -1))
+                this.options.assignees_removed.push(group);
 
-            // If person is in added list - remove it from added list
-            if (this.groupInArray(this.options.assignees_added, person) != -1)
-                this.options.assignees_added.splice(this.groupInArray(this.options.assignees_added, person), 1);
+            // If group is in added list - remove it from added list
+            if (this.groupInArray(this.options.assignees_added, group) != -1)
+                this.options.assignees_added.splice(this.groupInArray(this.options.assignees_added, group), 1);
 
             // Update UI
             this.updateUI();

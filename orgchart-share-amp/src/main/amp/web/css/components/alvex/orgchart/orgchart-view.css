@@ -92,6 +92,10 @@ div.addPerson a.orgchart-action-link {
 	background-image: url(/share/res/components/images/add-icon-16.png);
 }
 
+div.addGroup a.orgchart-action-link {
+    background-image: url(/share/res/components/images/add-icon-16.png);
+}
+
 div.addPersonTitle a.orgchart-action-link {
 	padding: 0 0 0 0px;
 }
@@ -102,6 +106,15 @@ div.addPersonTitle img {
 }
 
 div.showUserInfoTitle img {
+	border: 0px;
+}
+
+div.addGroupTitle a.orgchart-action-link {
+	padding: 0 0 0 0px;
+}
+
+
+div.addGroupTitle img {
 	border: 0px;
 }
 
