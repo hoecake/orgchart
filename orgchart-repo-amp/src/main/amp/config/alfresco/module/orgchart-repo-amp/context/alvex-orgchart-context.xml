@@ -6,13 +6,13 @@
 		<!-- Register resource bundles -->
 		<property name="labels">
 			<list>
-				<value>alfresco.module.${project.artifactId}.messages.alvex-orgchart</value>
+				<value>alfresco.module.orgchart-repo-amp.messages.alvex-orgchart</value>
 			</list>
 		</property>
 		<!-- Register models -->
 		<property name="models">
 			<list>
-				<value>alfresco/module/${project.artifactId}/model/alvex-orgchart-content-model.xml</value>
+				<value>alfresco/module/orgchart-repo-amp/model/alvex-orgchart-content-model.xml</value>
 			</list>
 		</property>
 	</bean>

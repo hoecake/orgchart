@@ -24,11 +24,10 @@
 	<!-- Note. The bootstrap-context.xml file has to be loaded first.
 				Otherwise your custom models are not yet loaded when your service beans are instantiated and you
 				cannot for example register policies on them. -->
-	<import resource="classpath:alfresco/module/${project.artifactId}/context/alvex-activiti-connector-context.xml" />
-	<import resource="classpath:alfresco/module/${project.artifactId}/context/alvex-enterprise-orgchart-context.xml" />
-	<import resource="classpath:alfresco/module/${project.artifactId}/context/alvex-extension-registry-context.xml" />
-	<import resource="classpath:alfresco/module/${project.artifactId}/context/alvex-extension-registry-cron-context.xml" />
-	<import resource="classpath:alfresco/module/${project.artifactId}/context/alvex-orgchart-context.xml" />
-
+	<import resource="classpath:alfresco/module/orgchart-repo-amp/context/alvex-activiti-connector-context.xml" />
+	<import resource="classpath:alfresco/module/orgchart-repo-amp/context/alvex-enterprise-orgchart-context.xml" />
+	<import resource="classpath:alfresco/module/orgchart-repo-amp/context/alvex-extension-registry-context.xml" />
+	<import resource="classpath:alfresco/module/orgchart-repo-amp/context/alvex-extension-registry-cron-context.xml" />
+	<import resource="classpath:alfresco/module/orgchart-repo-amp/context/alvex-orgchart-context.xml" />
 
 </beans>
