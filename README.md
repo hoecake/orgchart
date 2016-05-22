@@ -31,7 +31,7 @@ cd ../orgchart-share-amp
 mvn clean package -Pinstallable-jar
 ```
 
-Then copy `orgchart-repo-amp/target/orgchart-repo-amp-1.0-installable.jar` and `orgchart-share-amp-1.0-installable.jar` to `$ALFRESCO_HOME/modules/platform` and `$ALFRESCO_HOME/modules/share` respectively.
+Then copy `orgchart-repo-amp/target/orgchart-repo-amp-1.0-installable.jar` and `orgchart-share-amp/target/orgchart-share-amp-1.0-installable.jar` to `$ALFRESCO_HOME/modules/platform` and `$ALFRESCO_HOME/modules/share` respectively.
 
 Also you can start embedded Alfresco to test Orgchart using `./run.sh` for Linux and `run.bat` for Windows.
 
